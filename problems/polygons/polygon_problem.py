@@ -15,9 +15,17 @@ import cv2
 import os
 
 class PoligonProblem(Problem):
-    def __init__(self, target_image, num_shapes, candidates_by_iteration=100,
-                 max_edges = 10, delta=1, neighborhood = 'all',
-                 polygon_list=None, sol_file='sol.png'):
+    def __init__(self,
+                 target_image,
+                 num_shapes,
+                 candidates_by_iteration=100,
+                 max_edges = 10,
+                 delta=1,
+                 neighborhood = 'all',
+                 polygon_list=None,
+                 sol_file='sol.png',
+                 vns_vnd='None'):
+
         self.target_image = target_image
         self.target_image_diff = target_image.astype('int16')
         self.num_shapes = num_shapes
@@ -31,12 +39,13 @@ class PoligonProblem(Problem):
         self.max_edges = max_edges
         self.delta = delta
         self.neighborhood = neighborhood
+        self.h, self.w = target_image.shape[:2]
 
         # Modificamos el nombre del fichero de salida para que no se sobrescriba con las diferentes pruebas
         path, ext = os.path.splitext(sol_file)[:]
         self.sol_file = path + '_' + datetime.now().strftime("%Y%m%d-%H%M%S") + ext
 
-
+        self.vns_vnd = vns_vnd
 
 
     def get_neighborhood(self, cand, neighborhood=None, num_candidates=None):
@@ -81,7 +90,6 @@ class PoligonProblem(Problem):
     # cand = [(((0, 0), (50, 0), (50, 20)), cand[0][1])]
     # Generacion de un vecino por eliminacion de un vértice y devolver candidato
     def __remove__neighbor(self, cand):
-        print('REMOVE: input cand={}'.format(cand))
         if self.polygon_list:
             i = random.choice(self.polygon_list)
         else:
@@ -89,7 +97,6 @@ class PoligonProblem(Problem):
         cand = copy.deepcopy(cand)
 
         cand[i] = self.__remove_vertex(cand[i][0]), cand[i][1]
-        print('REMOVE: output cand={}'.format(cand))
         return cand
 
 
@@ -97,7 +104,6 @@ class PoligonProblem(Problem):
 
     # Generacion de un vecino añadiendo un vértice y devolver candidato
     def __add__neighbor(self, cand):
-        print('ADD: input cand={}'.format(cand))
         if self.polygon_list:
             i = random.choice(self.polygon_list)
         else:
@@ -105,15 +111,13 @@ class PoligonProblem(Problem):
         cand = copy.deepcopy(cand)
 
         cand[i] = self.__add_vertex(cand[i][0]), cand[i][1]
-        print('ADD: output cand={}'.format(cand))
         return cand
 
 
 
-    # cand = [(((0, 0), (50, 0), (50, 20)), cand[0][1])]
+
     # Generacion de un vecino cambiando el color y devolver candidato
     def __color_neighbor(self, cand):
-        print('COLOR: input cand={}'.format(cand))
         if self.polygon_list:
             i = random.choice(self.polygon_list)
         else:
@@ -121,12 +125,10 @@ class PoligonProblem(Problem):
         cand = copy.deepcopy(cand)
 
         cand[i] = cand[i][0], self.__perturb_color(cand[i][1])
-        print('COLOR: output cand={}'.format(cand))
         return cand
 
 
     def __move__neighbor(self, cand):
-        print('MOVE: input cand={}'.format(cand))
         if self.polygon_list:
             i = random.choice(self.polygon_list)
         else:
@@ -134,34 +136,24 @@ class PoligonProblem(Problem):
 
         cand = copy.deepcopy(cand)
 
-        #print('move_neig: cand={}'.format(cand))
         j = random.randint(0, len(cand[i][0])-1)
         cand[i][0][j] = self.__move_point(*cand[i][0][j])
-        #cand[i][0] = self.__move_vertex(cand[i][0])
-        print('MOVE: output cand={}'.format(cand))
         return cand
 
 
     def __move_vertex(self, polygon):
         polygon = copy.deepcopy(polygon)
         i=random.randint(0, len(polygon) - 1)
-        #print('polygon={}'.format(polygon))
-        #print('polygon[i]={}'.format(polygon[i]))
-        #print('polygon[i][0]={}'.format(polygon[i][0]))
-        #print('polygon[i][1]={}'.format(polygon[i][1]))
-
         polygon[i] = self.__move_point(polygon[i][0], polygon[i][1])
         return polygon
 
 
     def __move_point(self, x, y):
         offset = 10
-        h, w = self.target_image.shape[:2]
-
         if random.choice([True, False]):
-            x = max(min(x + random.randint(-offset, offset), w), 0)
+            x = max(min(x + random.randint(-offset, offset), self.w), 0)
         else:
-            y = max(min(y + random.randint(-offset, offset), h), 0)
+            y = max(min(y + random.randint(-offset, offset), self.h), 0)
 
         return x, y
 
@@ -169,9 +161,8 @@ class PoligonProblem(Problem):
     # Añade un vértice aleatorio al polígono que recibe como entrada
     def __add_vertex(self, polygon):
         if(len(polygon) < self.max_edges):
-            h, w = self.target_image.shape[:2]
             polygon = copy.deepcopy(polygon)
-            polygon.insert(random.randint(0, len(polygon) - 1), self.get_random_point(h, w))
+            polygon.insert(random.randint(0, len(polygon) - 1), self.get_random_point())
         return polygon
 
 
@@ -200,17 +191,15 @@ class PoligonProblem(Problem):
 
 
     def get_random_polygon(self):
-        h, w = self.target_image.shape[:2]
         num_edges = random.randint(3, self.max_edges)
-        return [self.get_random_point(h,w) for _ in range(num_edges)]
+        return [self.get_random_point() for _ in range(num_edges)]
 
 
-    def get_random_point(self, h, w):
-        return random.randint(0, w), random.randint(0, h)
+    def get_random_point(self):
+        return random.randint(0, self.w), random.randint(0, self.h)
 
 
     def get_sol_diff(self, cand):
-        h, w = self.target_image.shape[:2]
         sol = self.create_image_from_sol(cand)
         diff = self.target_image_diff - sol
         return diff
@@ -218,10 +207,9 @@ class PoligonProblem(Problem):
 
     def fitness(self, cand):
         start_time = time.time()
-        h, w = self.target_image.shape[:2]
         diff = np.abs(self.get_sol_diff(cand)).sum()
 
-        _fitness = (100 * diff / (w * h * 3 * 255)) ** 2
+        _fitness = (100 * diff / (self.w * self.h * 3 * 255)) ** 2
 
         self.fitness_time += (time.time() - start_time)
         self.fitness_count += 1
@@ -231,17 +219,13 @@ class PoligonProblem(Problem):
 
 
     def create_image_from_sol(self, cand, to_rgb=True):
-        h, w = self.target_image.shape[:2]
-        sol = np.zeros((h, w, 4), np.uint8)
-        #cand = [(((0, 0), (50, 0), (50, 20)), cand[0][1])]
+        sol = np.zeros((self.h, self.w, 4), np.uint8)
 
         for shape, color in cand:
             overlay = sol.copy()
-
             pts = np.array(shape)
             pts = pts.reshape((-1, 1, 2))
             cv2.fillPoly(overlay, [pts], color)
-
             cv2.addWeighted(overlay, 0.8, sol, 0.2, 0, sol)
 
         if to_rgb:
@@ -267,7 +251,6 @@ class PoligonProblem(Problem):
             plt.show()
             self.initilized_graph = True
 
-        w, h = self.target_image.shape[:2]
         while True:
             try:
                 sol = queue.get_nowait()
@@ -291,14 +274,15 @@ class PoligonProblem(Problem):
                 plt.pause(0.0001)
 
             except:
-
                 plt.pause(0.1)
+
 
     def finish(self):
         self.draw_queue.put('Q')
 
 
 if __name__ == '__main__':
+    print(datetime.now())
     img = cv2.imread('data/images/mona-lisa-head.png')
     improving_list = []
 
@@ -310,35 +294,59 @@ if __name__ == '__main__':
     initial_solution = None
     i = 1
     current_fitness = 10000000
-    problem = PoligonProblem(img, num_shapes=i, candidates_by_iteration=100,
+    problem = PoligonProblem(img,
+                             num_shapes=i,
+                             candidates_by_iteration=100,
                              delta=50,
-                               sol_file='data/images/mona-lisa-head-sol2.png',
-                             max_edges=7)
+                             sol_file='data/images/mona-lisa-head-sol2.png',
+                             max_edges=7,
+                             vns_vnd='None')
 
     while initial_solution is None or len(initial_solution) < 100:
         problem.num_shapes = i
         # una posible mejora podria ser optimizar los polígonos que están introduciendo más error
         # i-1 optimiza el último poligono introducido
         problem.polygon_list = [i-1]
-        # none=primera iteracion
+
         if not initial_solution is None:
             initial_solution.append([problem.get_random_polygon(), problem.get_random_color()])
-        #ejecuta busqueda tabú
-        searcher = TabuSearch(problem, max_iterations=100,
-                              list_length=2, improved_event=improve, tolerance=50)
+
+        #Ejecuta busqueda tabú
+        searcher = TabuSearch(problem,
+                              max_iterations=100,
+                              list_length=2,
+                              improved_event=improve,
+                              tolerance=50)
+
         searcher.search(initial_solution=initial_solution)
 
-        # comprueba si la solucion actual es mejor que la encontrada
+        # Comprueba si la solucion actual es mejor que la encontrada
         if current_fitness > searcher.best_fitness or initial_solution is None:
             initial_solution = searcher.best
             current_fitness = searcher.best_fitness
 
             # aqui ya tenemos 2 vecinos
-            # tener en cuenta que hay que decirle que lo aplique sobre todos los poligonos
             if i > 1:
-                # indices de los poligonos que quiero optimizar, con esto poniendo a None le indico que lo aplique a todos los poligonos
+                # Indices de los poligonos que quiero optimizar
+                # Con None le indico que lo aplique a todos los poligonos
                 problem.polygon_list=None
-                #Aplicamos aquí VND (descenso por vecindades) o VNS
+
+                if problem.vns_vnd =='vnd':
+                    print('VND search...')
+                    vnd = VND(searcher, problem, ['move', 'color', 'add', 'remove'])
+                    vnd.search(initial_solution)
+
+                    initial_solution = vnd.best
+                    current_fitness = vnd.best_fitness
+
+                elif problem.vns_vnd =='vns':
+                    print('VNS search...')
+                    vns = VNS(searcher, problem, ['move', 'color', 'add', 'remove'])
+                    vns.search(initial_solution)
+
+                    initial_solution = vns.best
+                    current_fitness = vns.best_fitness
+
                 pass
 
             i += 1
@@ -352,11 +360,16 @@ if __name__ == '__main__':
 
     print("General optimization")
     problem.polygon_list=None
-    searcher = TabuSearch(problem, max_iterations=10000, list_length=100,
+    searcher = TabuSearch(problem,
+                          max_iterations=10000,
+                          list_length=100,
                           improved_event=improve)
     searcher.search(initial_solution=initial_solution)
     problem.finish()
 
     pk.dump(improving_list, open("result/mona_lisa_%f.pk" % searcher.best_fitness, "wb"))
+
+    pk.dump(improving_list, open("problems/polygons/result/mona_lisa_%f.pk" % searcher.best_fitness, "wb"))
+    print(datetime.now())
 
     print("Finish")
