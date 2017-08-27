@@ -1,0 +1,56 @@
+# Git
+*.orig
+
+# Python and packages
+__pycache__/
+bin/
+build/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+*.py[codt]
+.installed.cfg
+*.egg
+*.so
+
+# Django
+local_settings*.py
+
+# Logs
+*.log
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing
+.tox/
+.coverage
+nosetests.xml
+coverage.xml
+
+# Downloads and extras
+*.tar.gz
+
+# Databases and indexers
+*.sqlite
+*.sqlite3
+elasticsearch*/
+
+# Editors and IDE
+.codeintel/
+*.sublime-project
+*.sublime-workspace
+.idea/
+
+# Virtual env
+venv/
+env/
+
+
+
+
