@@ -1,0 +1,15 @@
+poligonProblem.num_shapes = 1
+poligonProblem.vns_vnd = None
+poligonProblem.sol_file = data/images/mona-lisa-head-sol1.png
+generalTabuSearch.list_length = 5
+poligonProblem.max_edges = 4
+initialTabuSearch.tolerance = 50
+fitness = 238.3124
+test_number = 01
+poligonProblem.delta = 50
+initialSolution.lenght = 100
+poligonProblem.candidates_by_iteration = 3
+initialTabuSearch.list_length = 2
+elapsed_time = 143.9069 secs
+generalTabuSearch.max_iterations = 7
+initialTabuSearch.max_iterations = 7

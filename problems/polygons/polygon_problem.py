@@ -31,21 +31,16 @@ class PoligonProblem(Problem):
         self.num_shapes = num_shapes
         self.candidates_by_iteration = candidates_by_iteration
         self.initilized_graph = False
-        self.draw_queue = multiprocessing.Queue()
-        self.draw_process = None
         self.polygon_list = polygon_list
         self.fitness_count = 0
         self.fitness_time = 0
         self.max_edges = max_edges
         self.delta = delta
         self.neighborhood = neighborhood
-        self.h, self.w = target_image.shape[:2]
-
-        # Modificamos el nombre del fichero de salida para que no se sobrescriba con las diferentes pruebas
-        path, ext = os.path.splitext(sol_file)[:]
-        self.sol_file = path + '_' + datetime.now().strftime("%Y%m%d-%H%M%S") + ext
-
         self.vns_vnd = vns_vnd
+        self.h, self.w = target_image.shape[:2]
+        self.sol_file=sol_file
+
 
 
     def get_neighborhood(self, cand, neighborhood=None, num_candidates=None):
@@ -98,7 +93,6 @@ class PoligonProblem(Problem):
 
         cand[i] = self.__remove_vertex(cand[i][0]), cand[i][1]
         return cand
-
 
 
 
@@ -181,7 +175,6 @@ class PoligonProblem(Problem):
         return color
 
 
-
     def get_initial_solution(self):
         return [[self.get_random_polygon(), self.get_random_color()] for _ in range(self.num_shapes)]
 
@@ -217,7 +210,6 @@ class PoligonProblem(Problem):
         return _fitness
 
 
-
     def create_image_from_sol(self, cand, to_rgb=True):
         sol = np.zeros((self.h, self.w, 4), np.uint8)
 
@@ -233,75 +225,65 @@ class PoligonProblem(Problem):
         return sol
 
 
-
     def plot_sol(self, sol):
-        if self.draw_process is None:
-            self.draw_process = multiprocessing.Process(None, self.__plot_sol, args=(self.draw_queue,))
-            self.draw_process.start()
-
-        if self.draw_queue.qsize() < 1:
-            self.draw_queue.put(sol)
-
-
-
-    def __plot_sol(self, queue):
         if not self.initilized_graph:
             plt.ion()
             plt.show()
             self.initilized_graph = True
 
-        while True:
+        try:
+            sol = self.create_image_from_sol(sol, True)
+            cv2.imwrite(self.sol_file, sol)
+
             try:
-                sol = queue.get_nowait()
-
-                if sol == 'Q':
-                    plt.close()
-                    return
-
-                sol = self.create_image_from_sol(sol, True)
-                cv2.imwrite(self.sol_file, sol)
-
-                try:
-                    im = np.concatenate((cv2.cvtColor(sol, cv2.COLOR_RGB2BGR), cv2.cvtColor(self.target_image, cv2.COLOR_RGB2BGR)), axis=1)
-                except:
-                    traceback.print_exc()
-
-                plt.clf()
-                plt.imshow(im)
-                #plt.imshow(cv2.cvtColor(sol, cv2.COLOR_RGB2BGR))
-                #plt.draw()
-                plt.pause(0.0001)
-
+                im = np.concatenate(
+                        (cv2.cvtColor(sol, cv2.COLOR_RGB2BGR), cv2.cvtColor(self.target_image, cv2.COLOR_RGB2BGR)), axis=1)
             except:
-                plt.pause(0.1)
+                traceback.print_exc()
+
+            plt.clf()
+            plt.imshow(im)
+            plt.pause(0.001)
+
+        except:
+            plt.pause(0.1)
+
+
+    def plot_final_sol(self, sol):
+        sol = self.create_image_from_sol(sol, True)
+        cv2.imwrite(self.sol_file, sol)
 
 
     def finish(self):
-        self.draw_queue.put('Q')
+        plt.close()
 
 
 if __name__ == '__main__':
-    multiprocessing.set_start_method('spawn', force=True)
-
     start=time.time()
 
-    # PARAMS
+    # PARAMS CONFIGURATION
     params_dict={}
-    test_number='02'
+
+    params_dict['test_number'] = '01'
     params_dict['poligonProblem.num_shapes'] = 1
-    params_dict['poligonProblem.candidates_by_iteration'] = 3
+    params_dict['poligonProblem.candidates_by_iteration'] = 3  # default=100
     params_dict['poligonProblem.delta'] = 50
     params_dict['poligonProblem.sol_file'] = 'data/images/mona-lisa-head-sol1.png'
-    params_dict['poligonProblem.max_edges'] = 4
+    params_dict['poligonProblem.max_edges'] = 4  # default=7
     params_dict['poligonProblem.vns_vnd'] = 'None'
 
-    params_dict['initialTabuSearch.max_iterations'] = 7
+    params_dict['initialSolution.lenght'] = 100
+
+    params_dict['initialTabuSearch.max_iterations'] = 7   # default=100
     params_dict['initialTabuSearch.list_length'] = 2
     params_dict['initialTabuSearch.tolerance'] = 50
 
-    params_dict['generalTabuSearch.max_iterations'] = 7
-    params_dict['generalTabuSearch.list_length'] = 5
+    params_dict['generalTabuSearch.max_iterations'] = 7   # default=100
+    params_dict['generalTabuSearch.list_length'] = 5      # default=100
 
+    parameters_file_path = 'tests/' + params_dict['test_number'] + '/' + datetime.now().strftime('%Y%m%d-%H%M%S') + '_parameters.txt'
+    solution_file_path = 'tests/' + params_dict['test_number'] + '/' + datetime.now().strftime('%Y%m%d-%H%M%S') + '_solution_file.png'
+    improving_file_path= 'tests/' + params_dict['test_number'] + '/' + datetime.now().strftime('%Y%m%d-%H%M%S') + '_improving_list'
 
 
     img = cv2.imread('data/images/mona-lisa-head.png')
@@ -310,22 +292,22 @@ if __name__ == '__main__':
     def improve(caller):
         global improving_list
         improving_list.append(caller.best)
-        problem.plot_sol(caller.best)
+        #problem.plot_sol(caller.best)
 
     initial_solution = None
     i = 1
     current_fitness = 10000000
-    problem = PoligonProblem(img,
-                             num_shapes=i,
-                             #candidates_by_iteration=100, #INPF
-                             candidates_by_iteration=3,
-                             delta=50,
-                             sol_file='data/images/mona-lisa-head-sol1.png',
-                             #max_edges=7,  # INPF
-                             max_edges=4,
-                             vns_vnd='None')
 
-    while initial_solution is None or len(initial_solution) < 100:
+
+    problem = PoligonProblem(img,
+                             num_shapes=params_dict['poligonProblem.num_shapes'],
+                             candidates_by_iteration=params_dict['poligonProblem.candidates_by_iteration'],
+                             delta=params_dict['poligonProblem.delta'],
+                             sol_file=solution_file_path,
+                             max_edges=params_dict['poligonProblem.max_edges'],
+                             vns_vnd=params_dict['poligonProblem.vns_vnd'])
+
+    while initial_solution is None or len(initial_solution) < params_dict['initialSolution.lenght']:
         problem.num_shapes = i
         # una posible mejora podria ser optimizar los polígonos que están introduciendo más error
         # i-1 optimiza el último poligono introducido
@@ -336,11 +318,10 @@ if __name__ == '__main__':
 
         #Ejecuta busqueda tabú
         searcher = TabuSearch(problem,
-                              #max_iterations=100, # INPF
-                              max_iterations=7,
-                              list_length=2,
+                              max_iterations=params_dict['initialTabuSearch.max_iterations'],
+                              list_length=params_dict['initialTabuSearch.list_length'],
                               improved_event=improve,
-                              tolerance=50)
+                              tolerance=params_dict['initialTabuSearch.tolerance'])
 
         searcher.search(initial_solution=initial_solution)
 
@@ -385,24 +366,26 @@ if __name__ == '__main__':
     print("General optimization")
     problem.polygon_list=None
     searcher = TabuSearch(problem,
-                          #max_iterations=10000,
-                          max_iterations=7,  #INPF
-                          #list_length=100,
-                          list_length=5, # INPF
+                          max_iterations=params_dict['generalTabuSearch.max_iterations'],
+                          list_length=params_dict['generalTabuSearch.list_length'],
                           improved_event=improve)
+
     searcher.search(initial_solution=initial_solution)
+
     problem.finish()
 
-
-    pk.dump(improving_list, open("tests/" + test_number +  "/" + datetime.now().strftime("%Y%m%d-%H%M%S") + "_mona_lisa__%f.pk" % searcher.best_fitness, "wb"))
-
+    pk.dump(improving_list, open(improving_file_path + '_%f.pk' % searcher.best_fitness, 'wb'))
 
     end=time.time()
-    params_dict['poligonProblem.elapsed_time']= '{} secs'.format(round(end-start, 4))
 
-    with open("tests/" + test_number + "/" + datetime.now().strftime("%Y%m%d-%H%M%S") + '_parameters.txt', 'a') as f:
+    params_dict['elapsed_time']= '{} secs'.format(round(end-start, 4))
+    params_dict['fitness'] = round(searcher.best_fitness, 4)
+
+    with open(parameters_file_path, 'a') as fparams:
         for param, value in params_dict.items():
             line = '{} = {}'.format(param, value)
-            print(line, file=f)
+            print(line, file=fparams)
+
+    problem.plot_final_sol(searcher.best)
 
     print("Finish")
