@@ -258,6 +258,12 @@ class PoligonProblem(Problem):
         plt.close()
 
 
+    def params_to_file(self, params_dict, file_path):
+        with open(file_path, 'a') as fparams:
+            for param, value in sorted(params_dict.items()):
+                line = '{} = {}'.format(param, value)
+                print(line, file=fparams)
+
 if __name__ == '__main__':
     start=time.time()
 
@@ -268,7 +274,6 @@ if __name__ == '__main__':
     params_dict['poligonProblem.num_shapes'] = 1
     params_dict['poligonProblem.candidates_by_iteration'] = 3  # default=100
     params_dict['poligonProblem.delta'] = 50
-    params_dict['poligonProblem.sol_file'] = 'data/images/mona-lisa-head-sol1.png'
     params_dict['poligonProblem.max_edges'] = 4  # default=7
     params_dict['poligonProblem.vns_vnd'] = 'None'
 
@@ -281,7 +286,7 @@ if __name__ == '__main__':
     params_dict['generalTabuSearch.max_iterations'] = 7   # default=100
     params_dict['generalTabuSearch.list_length'] = 5      # default=100
 
-    parameters_file_path = 'tests/' + params_dict['test_number'] + '/' + datetime.now().strftime('%Y%m%d-%H%M%S') + '_parameters.txt'
+    params_file_path = 'tests/' + params_dict['test_number'] + '/' + datetime.now().strftime('%Y%m%d-%H%M%S') + '_parameters.txt'
     solution_file_path = 'tests/' + params_dict['test_number'] + '/' + datetime.now().strftime('%Y%m%d-%H%M%S') + '_solution_file.png'
     improving_file_path= 'tests/' + params_dict['test_number'] + '/' + datetime.now().strftime('%Y%m%d-%H%M%S') + '_improving_list'
 
@@ -378,13 +383,10 @@ if __name__ == '__main__':
 
     end=time.time()
 
-    params_dict['elapsed_time']= '{} secs'.format(round(end-start, 4))
+    params_dict['elapsed_time']= '{} secs'.format(round(end-start, 2))
     params_dict['fitness'] = round(searcher.best_fitness, 4)
 
-    with open(parameters_file_path, 'a') as fparams:
-        for param, value in params_dict.items():
-            line = '{} = {}'.format(param, value)
-            print(line, file=fparams)
+    problem.params_to_file(params_dict, params_file_path)
 
     problem.plot_final_sol(searcher.best)
 
