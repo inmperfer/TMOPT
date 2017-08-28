@@ -235,7 +235,6 @@ class PoligonProblem(Problem):
 
 
     def plot_sol(self, sol):
-
         if self.draw_process is None:
             self.draw_process = multiprocessing.Process(None, self.__plot_sol, args=(self.draw_queue,))
             self.draw_process.start()
@@ -282,7 +281,29 @@ class PoligonProblem(Problem):
 
 
 if __name__ == '__main__':
-    print(datetime.now())
+    multiprocessing.set_start_method('spawn', force=True)
+
+    start=time.time()
+
+    # PARAMS
+    params_dict={}
+    test_number='02'
+    params_dict['poligonProblem.num_shapes'] = 1
+    params_dict['poligonProblem.candidates_by_iteration'] = 3
+    params_dict['poligonProblem.delta'] = 50
+    params_dict['poligonProblem.sol_file'] = 'data/images/mona-lisa-head-sol1.png'
+    params_dict['poligonProblem.max_edges'] = 4
+    params_dict['poligonProblem.vns_vnd'] = 'None'
+
+    params_dict['initialTabuSearch.max_iterations'] = 7
+    params_dict['initialTabuSearch.list_length'] = 2
+    params_dict['initialTabuSearch.tolerance'] = 50
+
+    params_dict['generalTabuSearch.max_iterations'] = 7
+    params_dict['generalTabuSearch.list_length'] = 5
+
+
+
     img = cv2.imread('data/images/mona-lisa-head.png')
     improving_list = []
 
@@ -296,10 +317,12 @@ if __name__ == '__main__':
     current_fitness = 10000000
     problem = PoligonProblem(img,
                              num_shapes=i,
-                             candidates_by_iteration=100,
+                             #candidates_by_iteration=100, #INPF
+                             candidates_by_iteration=3,
                              delta=50,
                              sol_file='data/images/mona-lisa-head-sol1.png',
-                             max_edges=7,
+                             #max_edges=7,  # INPF
+                             max_edges=4,
                              vns_vnd='None')
 
     while initial_solution is None or len(initial_solution) < 100:
@@ -313,7 +336,8 @@ if __name__ == '__main__':
 
         #Ejecuta busqueda tabú
         searcher = TabuSearch(problem,
-                              max_iterations=100,
+                              #max_iterations=100, # INPF
+                              max_iterations=7,
                               list_length=2,
                               improved_event=improve,
                               tolerance=50)
@@ -361,14 +385,24 @@ if __name__ == '__main__':
     print("General optimization")
     problem.polygon_list=None
     searcher = TabuSearch(problem,
-                          max_iterations=10000,
-                          list_length=100,
+                          #max_iterations=10000,
+                          max_iterations=7,  #INPF
+                          #list_length=100,
+                          list_length=5, # INPF
                           improved_event=improve)
     searcher.search(initial_solution=initial_solution)
     problem.finish()
 
-    pk.dump(improving_list, open("result/mona_lisa_%f.pk" % searcher.best_fitness, "wb"))
 
-    print(datetime.now())
+    pk.dump(improving_list, open("tests/" + test_number +  "/" + datetime.now().strftime("%Y%m%d-%H%M%S") + "_mona_lisa__%f.pk" % searcher.best_fitness, "wb"))
+
+
+    end=time.time()
+    params_dict['poligonProblem.elapsed_time']= '{} secs'.format(round(end-start, 4))
+
+    with open("tests/" + test_number + "/" + datetime.now().strftime("%Y%m%d-%H%M%S") + '_parameters.txt', 'a') as f:
+        for param, value in params_dict.items():
+            line = '{} = {}'.format(param, value)
+            print(line, file=f)
 
     print("Finish")
