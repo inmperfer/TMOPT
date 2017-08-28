@@ -298,7 +298,7 @@ if __name__ == '__main__':
                              num_shapes=i,
                              candidates_by_iteration=100,
                              delta=50,
-                             sol_file='data/images/mona-lisa-head-sol2.png',
+                             sol_file='data/images/mona-lisa-head-sol1.png',
                              max_edges=7,
                              vns_vnd='None')
 
@@ -369,7 +369,6 @@ if __name__ == '__main__':
 
     pk.dump(improving_list, open("result/mona_lisa_%f.pk" % searcher.best_fitness, "wb"))
 
-    pk.dump(improving_list, open("problems/polygons/result/mona_lisa_%f.pk" % searcher.best_fitness, "wb"))
     print(datetime.now())
 
     print("Finish")
