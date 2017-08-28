@@ -41,8 +41,7 @@ class PoligonProblem(Problem):
         self.h, self.w = target_image.shape[:2]
         self.sol_file=sol_file
 
-
-
+    # cand = [(((0, 0), (50, 0), (50, 20)), cand[0][1])]
     def get_neighborhood(self, cand, neighborhood=None, num_candidates=None):
         if neighborhood is None:
             neighborhood = self.neighborhood
@@ -82,7 +81,7 @@ class PoligonProblem(Problem):
         return candidates
 
 
-    # cand = [(((0, 0), (50, 0), (50, 20)), cand[0][1])]
+
     # Generacion de un vecino por eliminacion de un vértice y devolver candidato
     def __remove__neighbor(self, cand):
         if self.polygon_list:
@@ -270,21 +269,21 @@ if __name__ == '__main__':
     # PARAMS CONFIGURATION
     params_dict={}
 
-    params_dict['test_number'] = '01'
+    params_dict['test_number'] = '02'
     params_dict['poligonProblem.num_shapes'] = 1
-    params_dict['poligonProblem.candidates_by_iteration'] = 3  # default=100
+    params_dict['poligonProblem.candidates_by_iteration'] = 100
     params_dict['poligonProblem.delta'] = 50
-    params_dict['poligonProblem.max_edges'] = 4  # default=7
+    params_dict['poligonProblem.max_edges'] = 7
     params_dict['poligonProblem.vns_vnd'] = 'None'
 
     params_dict['initialSolution.lenght'] = 100
 
-    params_dict['initialTabuSearch.max_iterations'] = 7   # default=100
+    params_dict['initialTabuSearch.max_iterations'] = 100
     params_dict['initialTabuSearch.list_length'] = 2
     params_dict['initialTabuSearch.tolerance'] = 50
 
-    params_dict['generalTabuSearch.max_iterations'] = 7   # default=100
-    params_dict['generalTabuSearch.list_length'] = 5      # default=100
+    params_dict['generalTabuSearch.max_iterations'] = 100
+    params_dict['generalTabuSearch.list_length'] = 100
 
     params_file_path = 'tests/' + params_dict['test_number'] + '/' + datetime.now().strftime('%Y%m%d-%H%M%S') + '_parameters.txt'
     solution_file_path = 'tests/' + params_dict['test_number'] + '/' + datetime.now().strftime('%Y%m%d-%H%M%S') + '_solution_file.png'
