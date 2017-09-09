@@ -90,7 +90,8 @@ class PoligonProblem(Problem):
             i = random.randint(0, len(cand) - 1)
         cand = copy.deepcopy(cand)
 
-        cand[i] = self.__remove_vertex(cand[i][0]), cand[i][1]
+        if len(cand[i][0]) > 3:
+            cand[i] = self.__remove_vertex(cand[i][0]), cand[i][1]
         return cand
 
 
@@ -269,21 +270,19 @@ if __name__ == '__main__':
     # PARAMS CONFIGURATION
     params_dict={}
 
-    params_dict['test_number'] = '02'
-    params_dict['poligonProblem.num_shapes'] = 1
-    params_dict['poligonProblem.candidates_by_iteration'] = 100
-    params_dict['poligonProblem.delta'] = 50
-    params_dict['poligonProblem.max_edges'] = 7
-    params_dict['poligonProblem.vns_vnd'] = 'None'
-
+    params_dict['test_number'] = '14'
+    params_dict['generalTabuSearch.list_length'] = 5
+    params_dict['generalTabuSearch.max_iterations'] = 7
     params_dict['initialSolution.lenght'] = 100
 
-    params_dict['initialTabuSearch.max_iterations'] = 100
     params_dict['initialTabuSearch.list_length'] = 2
+    params_dict['initialTabuSearch.max_iterations'] = 7
     params_dict['initialTabuSearch.tolerance'] = 50
-
-    params_dict['generalTabuSearch.max_iterations'] = 100
-    params_dict['generalTabuSearch.list_length'] = 100
+    params_dict['poligonProblem.candidates_by_iteration'] = 3
+    params_dict['poligonProblem.delta'] = 50
+    params_dict['poligonProblem.max_edges'] = 4
+    params_dict['poligonProblem.num_shapes'] = 1
+    params_dict['poligonProblem.vns_vnd'] = 'vnd'
 
     params_file_path = 'tests/' + params_dict['test_number'] + '/' + datetime.now().strftime('%Y%m%d-%H%M%S') + '_parameters.txt'
     solution_file_path = 'tests/' + params_dict['test_number'] + '/' + datetime.now().strftime('%Y%m%d-%H%M%S') + '_solution_file.png'
@@ -339,14 +338,22 @@ if __name__ == '__main__':
                 # Indices de los poligonos que quiero optimizar
                 # Con None le indico que lo aplique a todos los poligonos
                 problem.polygon_list=None
-
                 if problem.vns_vnd =='vnd':
                     print('VND search...')
                     vnd = VND(searcher, problem, ['move', 'color', 'add', 'remove'])
-                    vnd.search(initial_solution)
+                    vnd.search(initial_solution=initial_solution)
 
-                    initial_solution = vnd.best
-                    current_fitness = vnd.best_fitness
+                    #initial_solution = vnd.best
+                    #current_fitness = vnd.best_fitness
+
+                    problem.neighborhood = 'all'
+                    if current_fitness > searcher.best_fitness or initial_solution is None:
+                        initial_solution = searcher.best
+                        current_fitness = searcher.best_fitness
+                        # hasta aqui vnd
+
+
+
 
                 elif problem.vns_vnd =='vns':
                     print('VNS search...')
